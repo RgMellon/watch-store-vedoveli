@@ -1,7 +1,7 @@
 import { mount } from '@vue/test-utils';
-import { cartState } from '@/state';
 import ProductCard from '@/components/ProductCard';
 import { makeServer } from '@/miragejs/server';
+import { CartManager } from '@/managers/CartManager';
 
 const mountProductCard = () => {
   const product = server.create('product', {
@@ -9,15 +9,21 @@ const mountProductCard = () => {
     price: '22.00',
   });
 
+  const cartManager = new CartManager();
+
   const wrapper = mount(ProductCard, {
     propsData: {
       product,
+    },
+    mocks: {
+      $cart: cartManager,
     },
   });
 
   return {
     wrapper,
     product,
+    cartManager,
   };
 };
 
@@ -41,11 +47,14 @@ describe('ProductCard - unit', () => {
   });
 
   it('should add item to cartState on button click', async () => {
-    const { wrapper, product } = mountProductCard();
+    const { wrapper, cartManager, product } = mountProductCard();
+    const spy1 = jest.spyOn(cartManager, 'open');
+    const spy2 = jest.spyOn(cartManager, 'addProduct');
+
     await wrapper.find('button').trigger('click');
 
-    expect(cartState.items).toHaveLength(1);
+    expect(spy1).toHaveBeenCalledTimes(1);
+    expect(spy2).toHaveBeenCalledTimes(1);
+    expect(spy2).toHaveBeenCalledWith(product);
   });
-
-  it.todo('should ensure product is not added to the cart twice');
 });
